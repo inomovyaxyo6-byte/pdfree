@@ -67,7 +67,6 @@
     };
 
     document.addEventListener('keydown', onKey);
-    document.addEventListener('langchange', () => { renderProps(); if (E.pages.length) renderAll(); });
 
     // Drag & drop straight onto the editor.
     dropTarget(els.scroll, files => {

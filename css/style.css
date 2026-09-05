@@ -52,12 +52,6 @@ a{color:inherit;text-decoration:none}
 .topnav a:hover{background:var(--surface-2); color:var(--text)}
 .topnav a.active{background:var(--accent-weak); color:var(--accent)}
 .topbar-right{display:flex; align-items:center; gap:10px}
-.lang-switch{display:flex; background:var(--surface-2); border-radius:8px; padding:2px}
-.lang-switch button{
-  border:0; background:none; color:var(--muted); font:inherit; font-size:12px; font-weight:700;
-  padding:5px 9px; border-radius:6px; cursor:pointer;
-}
-.lang-switch button.active{background:var(--surface); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,.12)}
 
 /* ---------- buttons ---------- */
 .btn{

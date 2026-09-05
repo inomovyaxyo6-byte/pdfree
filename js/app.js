@@ -6,7 +6,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     Editor.init();
     initTheme();
-    initLang();
+    applyI18n();
     renderToolGrid(document.getElementById('toolGrid'));
     renderToolGrid(document.getElementById('toolGrid2'));
     initHome();
@@ -40,7 +40,7 @@
     show('home');
   }
 
-  /* ---------------- theme + language ---------------- */
+  /* ---------------- theme ---------------- */
   function initTheme() {
     const saved = localStorage.getItem('pdfree.theme');
     const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
@@ -54,26 +54,6 @@
       localStorage.setItem('pdfree.theme', next);
       sync();
     };
-  }
-
-  function initLang() {
-    document.documentElement.lang = getLang();
-    applyI18n();
-    const syncLangButtons = () => {
-      document.querySelectorAll('#langSwitch button').forEach(b => {
-        b.classList.toggle('active', b.dataset.lang === getLang());
-      });
-    };
-    document.querySelectorAll('#langSwitch button').forEach(b => {
-      b.onclick = () => setLang(b.dataset.lang);
-    });
-    syncLangButtons();
-    document.addEventListener('langchange', () => {
-      syncLangButtons();
-      renderToolGrid(document.getElementById('toolGrid'));
-      renderToolGrid(document.getElementById('toolGrid2'));
-      if (current.tool) openTool(current.tool, true);
-    });
   }
 
   /* ---------------- home ---------------- */

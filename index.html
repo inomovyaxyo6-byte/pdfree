@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PDFree — бесплатный редактор и подпись PDF онлайн</title>
-<meta name="description" content="Редактируйте и подписывайте PDF бесплатно и без регистрации. Файлы обрабатываются прямо в браузере и никуда не загружаются.">
+<title>PDFree — free PDF editor and signature</title>
+<meta name="description" content="Edit and sign PDF files for free, no sign-up. Everything runs in your browser and your files never leave your device.">
 <link rel="icon" href="assets/favicon.svg">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,15 +15,11 @@
     <span class="brand-mark">PDF</span><span class="brand-rest">ree</span>
   </a>
   <nav class="topnav">
-    <a href="#/" data-nav="home" data-i18n="nav.home">Главная</a>
-    <a href="#/editor" data-nav="editor" data-i18n="nav.editor">Редактор</a>
-    <a href="#/tools" data-nav="tools" data-i18n="nav.tools">Инструменты</a>
+    <a href="#/" data-nav="home" data-i18n="nav.home">Home</a>
+    <a href="#/editor" data-nav="editor" data-i18n="nav.editor">Editor</a>
+    <a href="#/tools" data-nav="tools" data-i18n="nav.tools">Tools</a>
   </nav>
   <div class="topbar-right">
-    <div class="lang-switch" id="langSwitch">
-      <button data-lang="ru" class="active">RU</button>
-      <button data-lang="en">EN</button>
-    </div>
     <button class="icon-btn" id="themeToggle" title="Theme" aria-label="Theme">🌙</button>
   </div>
 </header>
@@ -33,38 +29,38 @@
   <!-- ================= HOME ================= -->
   <section class="view" id="view-home">
     <div class="hero">
-      <h1 data-i18n="home.title">Редактируйте и подписывайте PDF — бесплатно</h1>
-      <p class="lead" data-i18n="home.lead">Без регистрации, без водяных знаков, без лимитов. Файлы обрабатываются прямо в вашем браузере и никогда не отправляются на сервер.</p>
+      <h1 data-i18n="home.title">Edit and sign PDFs — free</h1>
+      <p class="lead" data-i18n="home.lead">No sign-up, no watermarks, no limits. Your files are processed right inside your browser and never reach a server.</p>
 
       <div class="dropzone" id="homeDrop">
         <input type="file" id="homeFile" accept="application/pdf" hidden>
         <div class="dz-icon">📄</div>
-        <div class="dz-title" data-i18n="home.drop">Перетащите PDF сюда</div>
-        <div class="dz-sub" data-i18n="home.dropSub">или нажмите, чтобы выбрать файл</div>
+        <div class="dz-title" data-i18n="home.drop">Drop a PDF here</div>
+        <div class="dz-sub" data-i18n="home.dropSub">or click to choose a file</div>
       </div>
 
       <ul class="badges">
-        <li>🔒 <span data-i18n="home.b1">Файлы не покидают устройство</span></li>
-        <li>∞ <span data-i18n="home.b2">Без лимитов и подписок</span></li>
-        <li>⚡ <span data-i18n="home.b3">Работает офлайн</span></li>
+        <li>🔒 <span data-i18n="home.b1">Files never leave your device</span></li>
+        <li>∞ <span data-i18n="home.b2">No limits, no subscription</span></li>
+        <li>⚡ <span data-i18n="home.b3">Works offline</span></li>
       </ul>
     </div>
 
-    <h2 class="section-title" data-i18n="home.tools">Инструменты</h2>
+    <h2 class="section-title" data-i18n="home.tools">Tools</h2>
     <div class="tool-grid" id="toolGrid"></div>
 
     <section class="info">
       <div class="info-card">
-        <h3 data-i18n="home.why1t">Почему это бесплатно?</h3>
-        <p data-i18n="home.why1b">Здесь нет серверов, которые нужно оплачивать: PDF читается и пересобирается кодом прямо на вашей странице. Нам просто нечего вам выставлять в счёт.</p>
+        <h3 data-i18n="home.why1t">Why is it free?</h3>
+        <p data-i18n="home.why1b">There are no servers to pay for: the PDF is parsed and rebuilt by code running on your own page. There is simply nothing to bill you for.</p>
       </div>
       <div class="info-card">
-        <h3 data-i18n="home.why2t">Насколько это безопасно?</h3>
-        <p data-i18n="home.why2b">Документ не загружается в интернет. Откройте вкладку, отключите Wi-Fi — и всё продолжит работать. Это удобно для договоров, паспортов и справок.</p>
+        <h3 data-i18n="home.why2t">Is it safe?</h3>
+        <p data-i18n="home.why2b">Your document is never uploaded. Open the tab, turn off Wi-Fi, and everything still works — handy for contracts, IDs and certificates.</p>
       </div>
       <div class="info-card">
-        <h3 data-i18n="home.why3t">Юридическая сила подписи</h3>
-        <p data-i18n="home.why3b">Здесь вы ставите изображение подписи — это простая электронная подпись. Для квалифицированной подписи с криптосертификатом нужен аккредитованный сервис.</p>
+        <h3 data-i18n="home.why3t">About signature validity</h3>
+        <p data-i18n="home.why3b">You place an image of your signature, which is a simple electronic signature. A qualified signature with a crypto certificate requires an accredited provider.</p>
       </div>
     </section>
   </section>
@@ -73,15 +69,15 @@
   <section class="view" id="view-editor" hidden>
     <div class="editor-toolbar">
       <div class="tb-group" id="toolButtons">
-        <button class="tool-btn active" data-tool="select" title="V"><span>⬚</span><em data-i18n="tool.select">Выбор</em></button>
-        <button class="tool-btn" data-tool="text" title="T"><span>T</span><em data-i18n="tool.text">Текст</em></button>
-        <button class="tool-btn" data-tool="sign" title="S"><span>✍</span><em data-i18n="tool.sign">Подпись</em></button>
-        <button class="tool-btn" data-tool="image" title="I"><span>🖼</span><em data-i18n="tool.image">Картинка</em></button>
-        <button class="tool-btn" data-tool="check" title="X"><span>✔</span><em data-i18n="tool.check">Галочка</em></button>
-        <button class="tool-btn" data-tool="draw" title="D"><span>✎</span><em data-i18n="tool.draw">Рисовать</em></button>
-        <button class="tool-btn" data-tool="highlight" title="H"><span>▬</span><em data-i18n="tool.highlight">Маркер</em></button>
-        <button class="tool-btn" data-tool="rect" title="R"><span>▭</span><em data-i18n="tool.rect">Фигура</em></button>
-        <button class="tool-btn" data-tool="redact" title="B"><span>⬛</span><em data-i18n="tool.redact">Скрыть</em></button>
+        <button class="tool-btn active" data-tool="select" title="V"><span>⬚</span><em data-i18n="tool.select">Select</em></button>
+        <button class="tool-btn" data-tool="text" title="T"><span>T</span><em data-i18n="tool.text">Text</em></button>
+        <button class="tool-btn" data-tool="sign" title="S"><span>✍</span><em data-i18n="tool.sign">Sign</em></button>
+        <button class="tool-btn" data-tool="image" title="I"><span>🖼</span><em data-i18n="tool.image">Image</em></button>
+        <button class="tool-btn" data-tool="check" title="X"><span>✔</span><em data-i18n="tool.check">Check</em></button>
+        <button class="tool-btn" data-tool="draw" title="D"><span>✎</span><em data-i18n="tool.draw">Draw</em></button>
+        <button class="tool-btn" data-tool="highlight" title="H"><span>▬</span><em data-i18n="tool.highlight">Highlight</em></button>
+        <button class="tool-btn" data-tool="rect" title="R"><span>▭</span><em data-i18n="tool.rect">Shape</em></button>
+        <button class="tool-btn" data-tool="redact" title="B"><span>⬛</span><em data-i18n="tool.redact">Redact</em></button>
       </div>
 
       <div class="tb-group props" id="propsBar"></div>
@@ -94,8 +90,8 @@
         <span class="zoom-label" id="zoomLabel">100%</span>
         <button class="icon-btn" id="zoomIn">+</button>
         <span class="sep"></span>
-        <button class="btn ghost" id="openBtn" data-i18n="editor.open">Открыть</button>
-        <button class="btn primary" id="saveBtn" data-i18n="editor.save">Скачать PDF</button>
+        <button class="btn ghost" id="openBtn" data-i18n="editor.open">Open</button>
+        <button class="btn primary" id="saveBtn" data-i18n="editor.save">Download PDF</button>
       </div>
     </div>
 
@@ -105,8 +101,8 @@
         <div class="pages-stack" id="pagesStack"></div>
         <div class="empty-editor" id="emptyEditor">
           <div class="dz-icon">📄</div>
-          <p data-i18n="editor.empty">Откройте PDF, чтобы начать редактирование</p>
-          <button class="btn primary" id="emptyOpenBtn" data-i18n="editor.open">Открыть</button>
+          <p data-i18n="editor.empty">Open a PDF to start editing</p>
+          <button class="btn primary" id="emptyOpenBtn" data-i18n="editor.open">Open</button>
         </div>
       </div>
     </div>
@@ -116,55 +112,55 @@
 
   <!-- ================= TOOLS ================= -->
   <section class="view" id="view-tools" hidden>
-    <h2 class="section-title" data-i18n="home.tools">Инструменты</h2>
+    <h2 class="section-title" data-i18n="home.tools">Tools</h2>
     <div class="tool-grid" id="toolGrid2"></div>
   </section>
 
   <section class="view" id="view-tool" hidden>
-    <button class="btn ghost back" id="toolBack">← <span data-i18n="nav.tools">Инструменты</span></button>
+    <button class="btn ghost back" id="toolBack">← <span data-i18n="nav.tools">Tools</span></button>
     <div class="tool-panel">
       <h2 id="toolTitle"></h2>
       <p class="muted" id="toolDesc"></p>
       <div class="dropzone small" id="toolDrop">
         <input type="file" id="toolFile" hidden multiple>
-        <div class="dz-title" id="toolDropTitle" data-i18n="tool.drop">Перетащите файлы сюда</div>
-        <div class="dz-sub" data-i18n="home.dropSub">или нажмите, чтобы выбрать файл</div>
+        <div class="dz-title" id="toolDropTitle" data-i18n="tool.drop">Drop files here</div>
+        <div class="dz-sub" data-i18n="home.dropSub">or click to choose a file</div>
       </div>
       <ul class="file-list" id="toolFiles"></ul>
       <div class="tool-options" id="toolOptions"></div>
-      <button class="btn primary big" id="toolRun" disabled data-i18n="tool.run">Выполнить</button>
+      <button class="btn primary big" id="toolRun" disabled data-i18n="tool.run">Run</button>
       <div class="tool-result" id="toolResult"></div>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  <p>PDFree — <span data-i18n="footer.tag">бесплатный PDF-редактор, работающий целиком в браузере</span></p>
+  <p>PDFree — <span data-i18n="footer.tag">a free PDF editor that runs entirely in your browser</span></p>
 </footer>
 
 <!-- ============ SIGNATURE MODAL ============ -->
 <div class="modal-backdrop" id="signModal" hidden>
   <div class="modal">
     <div class="modal-head">
-      <h3 data-i18n="sign.title">Ваша подпись</h3>
+      <h3 data-i18n="sign.title">Your signature</h3>
       <button class="icon-btn" id="signClose">✕</button>
     </div>
     <div class="tabs" id="signTabs">
-      <button class="active" data-stab="draw" data-i18n="sign.draw">Нарисовать</button>
-      <button data-stab="type" data-i18n="sign.type">Напечатать</button>
-      <button data-stab="upload" data-i18n="sign.upload">Загрузить</button>
+      <button class="active" data-stab="draw" data-i18n="sign.draw">Draw</button>
+      <button data-stab="type" data-i18n="sign.type">Type</button>
+      <button data-stab="upload" data-i18n="sign.upload">Upload</button>
     </div>
     <div class="stab" data-spane="draw">
       <canvas id="signPad" width="1120" height="380"></canvas>
       <div class="pad-row">
         <div class="swatches" id="signColors"></div>
-        <label class="range"><span data-i18n="sign.thick">Толщина</span><input type="range" id="signWidth" min="1" max="10" value="4"></label>
-        <button class="btn ghost" id="signClear" data-i18n="sign.clear">Очистить</button>
+        <label class="range"><span data-i18n="sign.thick">Thickness</span><input type="range" id="signWidth" min="1" max="10" value="4"></label>
+        <button class="btn ghost" id="signClear" data-i18n="sign.clear">Clear</button>
       </div>
     </div>
     <div class="stab" data-spane="type" hidden>
-      <input type="text" id="signText" class="input big-input" placeholder="Иван Иванов">
-      <div class="type-preview" id="signPreview">Иван Иванов</div>
+      <input type="text" id="signText" class="input big-input" placeholder="Jane Doe">
+      <div class="type-preview" id="signPreview">Jane Doe</div>
       <div class="pad-row">
         <div class="swatches" id="signColors2"></div>
       </div>
@@ -172,14 +168,14 @@
     <div class="stab" data-spane="upload" hidden>
       <div class="dropzone small" id="signDrop">
         <input type="file" id="signFile" accept="image/png,image/jpeg" hidden>
-        <div class="dz-title" data-i18n="sign.uploadHint">Фото или скан подписи (PNG, JPG)</div>
-        <div class="dz-sub" data-i18n="sign.uploadSub">Белый фон будет удалён автоматически</div>
+        <div class="dz-title" data-i18n="sign.uploadHint">Photo or scan of your signature (PNG, JPG)</div>
+        <div class="dz-sub" data-i18n="sign.uploadSub">The white background is removed automatically</div>
       </div>
       <div class="sign-preview-wrap"><img id="signUploadPreview" alt=""></div>
     </div>
     <div class="modal-foot">
-      <label class="check"><input type="checkbox" id="signRemember" checked> <span data-i18n="sign.remember">Запомнить на этом устройстве</span></label>
-      <button class="btn primary" id="signApply" data-i18n="sign.apply">Применить</button>
+      <label class="check"><input type="checkbox" id="signRemember" checked> <span data-i18n="sign.remember">Remember on this device</span></label>
+      <button class="btn primary" id="signApply" data-i18n="sign.apply">Apply</button>
     </div>
   </div>
 </div>
