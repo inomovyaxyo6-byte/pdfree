@@ -1,0 +1,14 @@
+# Переводы строк нормализуются только в текстовых файлах.
+* text=auto
+
+# Двоичное — трогать нельзя, иначе файл portится при клоне на Windows.
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
