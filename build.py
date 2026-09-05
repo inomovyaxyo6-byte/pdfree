@@ -87,8 +87,9 @@ def main():
         scripts = ('\n'.join('<script src="%s"></script>' % u for u in VENDOR_CDN)
                    + '\n' + scripts)
 
-    html = html.replace('<link rel="stylesheet" href="css/style.css">',
-                        '<style>\n%s\n</style>' % css)
+    # Адреса файлов несут версию (?v=N) — регулярка не должна на неё натыкаться.
+    html = re.sub(r'<link rel="stylesheet" href="css/style\.css[^"]*">',
+                  lambda _: '<style>\n%s\n</style>' % css, html)
     html = html.replace('<link rel="icon" href="assets/favicon.svg">',
                         '<link rel="icon" href="data:image/svg+xml;base64,%s">'
                         % read_b64('assets/favicon.svg'))
