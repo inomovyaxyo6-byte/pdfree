@@ -7,6 +7,8 @@
 
 *A free, fully client-side PDF editor and signer. No backend, no uploads, no limits.*
 
+**Сайт: https://inomovyaxyo6-byte.github.io/pdfree/**
+
 ---
 
 ## Что умеет
@@ -52,13 +54,23 @@ js/css было видно сразу после F5. Для простого п�
 
 ---
 
-## Публикация (бесплатно)
+## Публикация
 
-Проект — обычные статические файлы, поэтому подойдёт любой из вариантов:
+Сайт уже опубликован на **GitHub Pages** из ветки `main`, папка `/`.
+Чтобы выложить изменения:
 
-- **GitHub Pages** — залейте репозиторий, включите Pages для ветки `main`, папка `/`.
-- **Cloudflare Pages** — «Direct upload», перетащите папку целиком.
-- **Netlify Drop** — перетащите папку на https://app.netlify.com/drop.
+```bash
+git add -A
+git commit -m "что изменилось"
+git push
+```
+
+Через минуту-полторы правки на боевом адресе. Состояние сборки:
+`gh api repos/inomovyaxyo6-byte/pdfree/pages`
+
+Проект — обычные статические файлы, так что подойдёт и любой другой хостинг:
+**Cloudflare Pages** («Direct upload») или **Netlify Drop** (перетащить папку
+на https://app.netlify.com/drop).
 
 Сборка не нужна: ни npm, ни Node.js в рантайме не используются.
 
