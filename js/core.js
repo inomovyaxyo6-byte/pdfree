@@ -163,6 +163,17 @@
       default: return { x: vx, y: H - vy };
     }
   };
+  /* The way back: a point from the PDF frame into the visual one. Form fields
+     arrive in PDF coordinates and have to land where the reader sees them. */
+  Core.unmapPoint = function (x, y, rot, W, H) {
+    switch (((rot % 360) + 360) % 360) {
+      case 90: return { x: y, y: x };
+      case 180: return { x: W - x, y: y };
+      case 270: return { x: H - y, y: W - x };
+      default: return { x: x, y: H - y };
+    }
+  };
+
   /* Anchor for a box drawn with pdf-lib (its origin is the bottom-left corner
      of the element, and `rotate` spins the element around that same point). */
   Core.boxAnchor = function (vx, vy, w, h, rot, W, H) {

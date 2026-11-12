@@ -14,7 +14,8 @@
 
   const E = {
     bytes: null, name: 'document.pdf', doc: null,
-    pages: [],           // {src, rot, W, H, vis:{w,h}, annots:[]}
+    pages: [],           // {src, rot, W, H, vis:{w,h}, annots:[], fields:[]}
+    fieldValues: {},     // имя поля формы -> значение, общее на весь документ
     tool: 'select',
     zoom: 1,
     sel: null,
@@ -115,22 +116,133 @@
       E.name = file.name || 'document.pdf';
       E.doc = await Core.openDoc(bytes);
       E.pages = [];
+      E.fieldValues = {};
       for (let i = 1; i <= E.doc.numPages; i++) {
         const p = await E.doc.getPage(i);
         const v = p.getViewport({ scale: 1, rotation: 0 });
-        E.pages.push({ src: i - 1, rot: p.rotate % 360, W: v.width, H: v.height, annots: [] });
+        const page = { src: i - 1, rot: p.rotate % 360, W: v.width, H: v.height, annots: [], fields: [] };
+        page.fields = await readFields(p);
+        page.fields.forEach(f => {
+          if (!(f.name in E.fieldValues)) E.fieldValues[f.name] = f.original;
+        });
+        E.pages.push(page);
       }
       E.history = []; E.future = []; E.sel = null; E.dirty = false;
       E.autoFit = true;
       E.zoom = fitZoom();
       await renderAll();
       Core.busy(false);
-      Core.toast(t('msg.loaded'));
+      const fields = E.pages.reduce((n, p) => n + p.fields.length, 0);
+      Core.toast(fields ? t('msg.formReady') : t('msg.loaded'));
     } catch (err) {
       Core.busy(false);
       console.error(err);
       Core.toast(t('msg.error') + err.message);
     }
+  }
+
+  /* A real form carries its own fields; the reader should type into them
+     instead of guessing where to drop a text box. */
+  async function readFields(page) {
+    let widgets;
+    try {
+      widgets = await page.getAnnotations();
+    } catch (err) {
+      return [];                       // a broken form must not block the file
+    }
+    const out = [];
+    widgets.forEach(a => {
+      if (a.subtype !== 'Widget' || a.readOnly || a.hidden) return;
+      const kind = a.fieldType === 'Tx' ? (a.multiLine ? 'textarea' : 'text')
+        : a.fieldType === 'Ch' ? 'select'
+          : (a.fieldType === 'Btn' && a.checkBox) ? 'checkbox' : null;
+      // Radio groups and push buttons are left exactly as they came.
+      if (!kind || !a.rect) return;
+      const value = Array.isArray(a.fieldValue) ? (a.fieldValue[0] || '') : (a.fieldValue || '');
+      out.push({
+        name: a.fieldName || ('field-' + out.length),
+        kind,
+        rect: a.rect.slice(0, 4),
+        options: (a.options || []).map(o => (o.displayValue || o.exportValue || '')),
+        maxLen: a.maxLen || 0,
+        original: kind === 'checkbox' ? (value !== '' && value !== 'Off') : String(value)
+      });
+    });
+    return out;
+  }
+
+  /* Field rectangles are kept in PDF coordinates, so turning the page moves
+     them along with everything else. */
+  function fieldBox(f, p) {
+    const a = Core.unmapPoint(f.rect[0], f.rect[1], p.rot, p.W, p.H);
+    const b = Core.unmapPoint(f.rect[2], f.rect[3], p.rot, p.W, p.H);
+    return {
+      x: Math.min(a.x, b.x), y: Math.min(a.y, b.y),
+      w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y)
+    };
+  }
+
+  function fieldFontSize(f, box) {
+    return f.kind === 'textarea' ? 11 : Math.min(box.h * 0.62, 13);
+  }
+
+  function fieldEl(f, pi) {
+    const box = fieldBox(f, E.pages[pi]);
+    const value = E.fieldValues[f.name];
+    let el;
+    if (f.kind === 'checkbox') {
+      el = document.createElement('input');
+      el.type = 'checkbox';
+      el.checked = !!value;
+    } else if (f.kind === 'select') {
+      el = document.createElement('select');
+      f.options.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o;
+        opt.textContent = o;
+        el.appendChild(opt);
+      });
+      el.value = value || '';
+    } else if (f.kind === 'textarea') {
+      el = document.createElement('textarea');
+      el.value = value || '';
+    } else {
+      el = document.createElement('input');
+      el.type = 'text';
+      el.value = value || '';
+      if (f.maxLen) el.maxLength = f.maxLen;
+    }
+    el.className = 'field f-' + f.kind;
+    el.dataset.field = f.name;
+    el.style.left = px(box.x);
+    el.style.top = px(box.y);
+    el.style.width = px(box.w);
+    el.style.height = px(box.h);
+    if (f.kind !== 'checkbox') el.style.font = px(fieldFontSize(f, box)) + '/1.25 ' + FAMILY.sans;
+    const read = () => (f.kind === 'checkbox' ? el.checked : el.value);
+    el.addEventListener('input', () => setFieldValue(f.name, read()));
+    el.addEventListener('change', () => setFieldValue(f.name, read()));
+    // While the select tool is active the field belongs to the reader, not to
+    // the page underneath; the drawing tools get it back through CSS.
+    el.addEventListener('pointerdown', ev => ev.stopPropagation());
+    return el;
+  }
+
+  /* One name, one value: the same field often repeats on several pages. */
+  function setFieldValue(name, value) {
+    if (E.fieldValues[name] === value) return;
+    E.fieldValues[name] = value;
+    E.dirty = true;
+    els.stack.querySelectorAll('.field').forEach(el => {
+      if (el.dataset.field !== name) return;
+      if (el.type === 'checkbox') { if (el.checked !== value) el.checked = value; }
+      else if (el.value !== value) el.value = value;
+    });
+  }
+
+  function fieldChanged(f) {
+    const now = E.fieldValues[f.name];
+    return f.kind === 'checkbox' ? !!now !== !!f.original : String(now || '') !== String(f.original || '');
   }
 
   function fitZoom() {
@@ -316,6 +428,7 @@
     if (!wrap) return;
     const layer = wrap.querySelector('.annot-layer');
     layer.innerHTML = '';
+    (E.pages[pi].fields || []).forEach(f => layer.appendChild(fieldEl(f, pi)));
     E.pages[pi].annots.forEach(a => layer.appendChild(annotEl(a, pi)));
   }
 
@@ -698,10 +811,15 @@
   }
 
   function snapshot() {
-    return JSON.stringify(E.pages.map(p => ({ src: p.src, rot: p.rot, W: p.W, H: p.H, annots: p.annots })));
+    return JSON.stringify({
+      pages: E.pages.map(p => ({ src: p.src, rot: p.rot, W: p.W, H: p.H, annots: p.annots, fields: p.fields })),
+      fieldValues: E.fieldValues
+    });
   }
   function restore(json) {
-    const data = JSON.parse(json);
+    const state = JSON.parse(json);
+    const data = state.pages;
+    E.fieldValues = state.fieldValues || {};
     // Undoing an annotation must not repaint every page: only redraw the
     // overlay when the page list and rotations are unchanged.
     const sameLayout = data.length === E.pages.length &&
@@ -1249,6 +1367,17 @@
       const size = page.getSize();
       const W = size.width, H = size.height;
 
+      // Filled-in fields are printed onto the page and their widgets dropped.
+      // A widget draws on top of page content, so leaving it would hide the
+      // new value behind the old one.
+      const filled = (model.fields || []).filter(fieldChanged);
+      if (filled.length) {
+        dropWidgets(page, filled);
+        const fonts2 = fonts.sans ? fonts : await Core.embedFonts(out, ['sans']);
+        Object.assign(fonts, fonts2);
+        for (const f of filled) drawField(page, f, model, fonts.sans, W, H);
+      }
+
       for (const a of model.annots) {
         if (a.type === 'text') {
           if (!a.text.trim()) continue;
@@ -1303,6 +1432,57 @@
     out.setProducer('PDFree');
     out.setModificationDate(new Date());
     return out;
+  }
+
+  /* Removes the widgets of the fields we are about to print, matching them by
+     rectangle: the name can live on a parent field dictionary, the box cannot. */
+  function dropWidgets(page, fields) {
+    let annots;
+    try { annots = page.node.Annots(); } catch (err) { return; }
+    if (!annots || !annots.size) return;
+    for (let i = annots.size() - 1; i >= 0; i--) {
+      let rect;
+      try {
+        const dict = page.node.context.lookup(annots.get(i));
+        rect = dict && dict.get && dict.get(PDFLib.PDFName.of('Rect'));
+        if (!rect || !rect.get) continue;
+        const box = [0, 1, 2, 3].map(k => rect.get(k).asNumber());
+        const hit = fields.some(f => f.rect.every((v, k) => Math.abs(v - box[k]) < 0.6));
+        if (hit) annots.remove(i);
+      } catch (err) { /* an annotation we cannot read is left alone */ }
+    }
+  }
+
+  function drawField(page, f, model, font, W, H) {
+    const box = fieldBox(f, model);
+    const value = E.fieldValues[f.name];
+    if (f.kind === 'checkbox') {
+      if (!value) return;                       // unticking just removes the widget
+      const pad = box.w * 0.18;
+      const pts = [[0.10, 0.52], [0.38, 0.80], [0.90, 0.18]]
+        .map(q => [pad + q[0] * (box.w - pad * 2), pad + q[1] * (box.h - pad * 2)]);
+      page.drawSvgPath(remapPath(pts, box, model.rot, W, H), {
+        x: 0, y: H, borderColor: PDFLib.rgb(0, 0, 0),
+        borderWidth: Math.max(1, box.h * 0.12), borderLineCap: LineCapStyle.Round
+      });
+      return;
+    }
+    const text = String(value || '');
+    if (!text) return;
+    const size = fieldFontSize(f, box);
+    const pad = Math.min(2, box.w * 0.02);
+    const lines = wrapLines(text, font, size, Math.max(1, box.w - pad * 2));
+    const base = baselineOffset(FAMILY.sans, size);
+    lines.forEach((line, li) => {
+      const vy = box.y + li * size * 1.25 + base;
+      if (vy > box.y + box.h + size * 0.3) return;   // keep it inside the box
+      if (!line) return;
+      const at = Core.mapPoint(box.x + pad, vy, model.rot, W, H);
+      page.drawText(line, {
+        x: at.x, y: at.y, size, font,
+        color: PDFLib.rgb(0.05, 0.05, 0.08), rotate: degrees(model.rot)
+      });
+    });
   }
 
   /* Freehand strokes are mapped point by point into the unrotated page frame,

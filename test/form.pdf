@@ -1,0 +1,63 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R] /DA (/Helv 11 Tf 0 g) /NeedAppearances true /DR << /Font << /Helv 3 0 R >> >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Name /Helv >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /Helv 3 0 R >> >> /Contents 5 0 R /Annots [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R] >>
+endobj
+5 0 obj
+<< /Length 390 >>
+stream
+BT /F1 20 Tf 60 770 Td (Employment application) Tj ET
+BT /F1 11 Tf 60 718 Td (Full name) Tj ET
+BT /F1 11 Tf 60 650 Td (Position applied for) Tj ET
+BT /F1 11 Tf 60 582 Td (Why you?) Tj ET
+BT /F1 11 Tf 60 440 Td (Shift) Tj ET
+BT /F1 11 Tf 84 362 Td (I agree to the terms) Tj ET
+0.6 0.6 0.65 RG 1 w
+60 690 300 22 re S
+60 622 300 22 re S
+60 480 420 90 re S
+60 412 160 22 re S
+60 360 16 16 re S
+endstream
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /F 4 /P 4 0 R /DA (/Helv 11 Tf 0 g) /Rect [60 690 360 712] /FT /Tx /T (fullName) /V () >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /F 4 /P 4 0 R /DA (/Helv 11 Tf 0 g) /Rect [60 622 360 644] /FT /Tx /T (position) /V (Driver) >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /F 4 /P 4 0 R /DA (/Helv 11 Tf 0 g) /Rect [60 480 480 570] /FT /Tx /T (why) /V () /Ff 4096 >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /F 4 /P 4 0 R /DA (/Helv 11 Tf 0 g) /Rect [60 412 220 434] /FT /Ch /T (shift) /V (Day) /Opt [(Day) (Night) (Any)] /Ff 131072 >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /F 4 /P 4 0 R /Rect [60 360 76 376] /FT /Btn /T (agree) /V /Off /AS /Off >>
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000193 00000 n 
+0000000250 00000 n 
+0000000332 00000 n 
+0000000511 00000 n 
+0000000951 00000 n 
+0000001089 00000 n 
+0000001233 00000 n 
+0000001375 00000 n 
+0000001551 00000 n 
+trailer
+<< /Size 11 /Root 1 0 R >>
+startxref
+1676
+%%EOF

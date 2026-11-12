@@ -77,6 +77,7 @@
 
     'msg.dropPdf': 'A PDF file is required',
     'msg.loaded': 'File opened',
+    'msg.formReady': 'Fillable form — click a field and type',
     'msg.saved': 'Done — file downloaded',
     'msg.noFiles': 'Add some files first',
     'msg.needTwo': 'At least two files are needed',
