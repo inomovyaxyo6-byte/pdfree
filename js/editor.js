@@ -74,6 +74,14 @@
       if (pdf) load(pdf); else Core.toast(t('msg.dropPdf'));
     });
 
+    // A marked-up contract is half an hour of work; a stray Ctrl+W must not
+    // throw it away without a word.
+    window.addEventListener('beforeunload', ev => {
+      if (!E.dirty) return;
+      ev.preventDefault();
+      ev.returnValue = '';
+    });
+
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
@@ -141,77 +149,166 @@
   /* Rendering is async, so a newer call must be able to cancel an older one;
      otherwise two runs interleave and fight over the same DOM nodes. */
   let renderSeq = 0;
-  let renderChain = Promise.resolve();
   const isCancelled = err => !!err && (err.name === 'RenderingCancelledException' ||
     /cancel/i.test(err.message || ''));
 
-  /* pdf.js allows only one render per page at a time — a second one aborts the
-     first — so renders are queued instead of run in parallel. A queued run that
-     has already been superseded exits immediately. */
-  function renderAll() {
-    const my = ++renderSeq;
-    renderChain = renderChain.then(() => paint(my), () => paint(my));
-    return renderChain;
+  /* pdf.js aborts a page's render when a second one starts on the SAME page,
+     so jobs for one page never overlap — but different pages may run together.
+     A few at a time keeps scrolling responsive, and one slow or stuck page can
+     no longer hold up the whole document. */
+  const jobs = [];
+  const busyPages = new Set();
+  const MAX_WORKERS = 3;
+  let workers = 0;
+
+  function enqueue(seq, page, run) {
+    return new Promise(resolve => {
+      jobs.push({ seq, page, run, resolve });
+      spawn();
+    });
   }
 
-  async function paint(my) {
-    if (my !== renderSeq) return;
+  async function spawn() {
+    if (workers >= MAX_WORKERS) return;
+    workers++;
+    try {
+      for (;;) {
+        const at = jobs.findIndex(j => !busyPages.has(j.page));
+        if (at < 0) return;
+        const job = jobs.splice(at, 1)[0];
+        if (job.seq === renderSeq) {
+          busyPages.add(job.page);
+          try {
+            await job.run();
+          } catch (err) {
+            if (!isCancelled(err)) console.error(err);
+          } finally {
+            busyPages.delete(job.page);
+            spawn();            // a page freed up: let a waiting job through
+          }
+        }
+        job.resolve();
+      }
+    } finally {
+      workers--;
+    }
+  }
+
+  /* A page is drawn only once it comes near the viewport. A hundred-page
+     contract must show its first sheet at once, not after the other ninety-nine. */
+  let pageWatcher = null;
+  let thumbWatcher = null;
+
+  function renderAll() {
+    return paint(++renderSeq);
+  }
+
+  function paint(my) {
+    if (pageWatcher) pageWatcher.disconnect();
+    if (thumbWatcher) thumbWatcher.disconnect();
+    jobs.length = 0;
+
     els.stack.innerHTML = '';
     els.panel.innerHTML = '';
     els.empty.hidden = E.pages.length > 0;
     els.zoomLabel.textContent = Math.round(E.zoom * 100) + '%';
-    const thumbs = E.pages.map((_, i) => els.panel.appendChild(thumbShell(i)));
-    for (let i = 0; i < E.pages.length; i++) {
-      const canvas = await renderPage(i, my);
-      if (my !== renderSeq) return;
-      if (canvas) fillThumb(thumbs[i], canvas, E.pages[i]);
+    if (!E.pages.length) return Promise.resolve();
+
+    pageWatcher = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) requestPage(+e.target.dataset.page, my); });
+    }, { root: els.scroll, rootMargin: '800px 0px' });
+
+    thumbWatcher = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) requestThumb(+e.target.dataset.page, my); });
+    }, { root: els.panel, rootMargin: '400px 0px' });
+
+    E.pages.forEach((p, i) => {
+      p.vis = Core.visualSize(p.W, p.H, p.rot);
+      els.stack.appendChild(pageShell(i));
+      els.panel.appendChild(thumbShell(i));
+    });
+    // Annotations are plain DOM and cost nothing, so they all go up front —
+    // only the canvases are expensive enough to postpone.
+    E.pages.forEach((_, i) => drawLayer(i));
+
+    [...els.stack.children].forEach(el => pageWatcher.observe(el));
+    [...els.panel.children].forEach(el => thumbWatcher.observe(el));
+
+    // The first sheet never waits for the observer: the viewer must not flash
+    // an empty page while the file is being opened.
+    return requestPage(0, my);
+  }
+
+  /* Empty page of the right size: the scrollbar is correct from the start,
+     so scrolling does not jump as sheets fill in. */
+  function pageShell(i) {
+    const p = E.pages[i];
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    wrap.dataset.page = i;
+    wrap.style.width = (p.vis.w * E.zoom) + 'px';
+    wrap.style.height = (p.vis.h * E.zoom) + 'px';
+    wrap.innerHTML = '<canvas></canvas><div class="annot-layer"></div>';
+    bindLayer(wrap.querySelector('.annot-layer'), i);
+    return wrap;
+  }
+
+  function requestPage(i, my) {
+    const wrap = els.stack.children[i];
+    if (!wrap || wrap.dataset.drawn === String(my)) return Promise.resolve();
+    wrap.dataset.drawn = String(my);        // claim it before the first await
+    return enqueue(my, i, () => drawPage(i, my, wrap));
+  }
+
+  async function drawPage(i, my, wrap) {
+    const p = E.pages[i];
+    const canvas = wrap.querySelector('canvas');
+    try {
+      const page = await E.doc.getPage(p.src + 1);
+      if (my !== renderSeq || !wrap.isConnected) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const viewport = page.getViewport({ scale: E.zoom * dpr, rotation: p.rot });
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      canvas.style.width = (p.vis.w * E.zoom) + 'px';
+      canvas.style.height = (p.vis.h * E.zoom) + 'px';
+      const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+    } catch (err) {
+      delete wrap.dataset.drawn;            // let a later scroll try again
+      if (!isCancelled(err)) throw err;
     }
   }
 
-  async function renderPage(i, seq) {
-    const my = seq === undefined ? renderSeq : seq;
-    const p = E.pages[i];
-    p.vis = Core.visualSize(p.W, p.H, p.rot);
-    let wrap = els.stack.children[i];
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.className = 'page-wrap';
-      wrap.innerHTML = '<canvas></canvas><div class="annot-layer"></div>';
-      els.stack.appendChild(wrap);
-    }
-    wrap.dataset.page = i;
-    const cssW = p.vis.w * E.zoom, cssH = p.vis.h * E.zoom;
-    wrap.style.width = cssW + 'px';
-    wrap.style.height = cssH + 'px';
+  function requestThumb(i, my) {
+    const div = els.panel.children[i];
+    if (!div || div.dataset.drawn === String(my)) return Promise.resolve();
+    div.dataset.drawn = String(my);
+    return enqueue(my, i, () => drawThumb(i, my, div));
+  }
 
-    const canvas = wrap.querySelector('canvas');
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const page = await E.doc.getPage(p.src + 1);
-    // A newer render may have replaced the whole stack while we were waiting;
-    // touching its canvas now would start a second render on it.
-    if (my !== renderSeq || els.stack.children[i] !== wrap) return;
-    const viewport = page.getViewport({ scale: E.zoom * dpr, rotation: p.rot });
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
-    canvas.style.width = cssW + 'px';
-    canvas.style.height = cssH + 'px';
-    const ctx = canvas.getContext('2d', { alpha: false });
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  async function drawThumb(i, my, div) {
+    const p = E.pages[i];
     try {
+      const page = await E.doc.getPage(p.src + 1);
+      if (my !== renderSeq || !div.isConnected) return;
+      const viewport = page.getViewport({ scale: 140 / p.vis.w, rotation: p.rot });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.floor(viewport.width));
+      canvas.height = Math.max(1, Math.floor(viewport.height));
+      const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const old = div.querySelector('canvas');
+      if (old) old.remove();
+      div.insertBefore(canvas, div.firstChild);
       await page.render({ canvasContext: ctx, viewport }).promise;
     } catch (err) {
-      // pdf.js aborts a page render when a newer one starts on the same page;
-      // that is exactly what a re-render does, so it is not a failure.
-      if (isCancelled(err)) return;
-      throw err;
+      delete div.dataset.drawn;
+      if (!isCancelled(err)) throw err;
     }
-    if (my !== renderSeq) return;
-
-    const layer = wrap.querySelector('.annot-layer');
-    bindLayer(layer, i);
-    drawLayer(i);
-    return canvas;
   }
 
   function drawLayer(pi) {
@@ -667,8 +764,22 @@
 
   function setZoom(z) {
     E.autoFit = false;
+    // Zooming rebuilds the stack, so remember which sheet the reader was on
+    // and put them back on it instead of throwing them to the first page.
+    const anchor = topVisiblePage();
     E.zoom = Math.min(3, Math.max(0.25, z));
     renderAll();
+    const wrap = anchor != null && els.stack.children[anchor];
+    if (wrap) els.scroll.scrollTop = wrap.offsetTop - 20;
+  }
+
+  function topVisiblePage() {
+    const top = els.scroll.scrollTop;
+    for (let i = 0; i < els.stack.children.length; i++) {
+      const wrap = els.stack.children[i];
+      if (wrap.offsetTop + wrap.offsetHeight > top + 4) return i;
+    }
+    return null;
   }
 
   /* =======================================================
@@ -774,8 +885,13 @@
      page thumbnails + page operations
      ======================================================= */
   function thumbShell(i) {
+    const p = E.pages[i];
     const div = document.createElement('div');
     div.className = 'thumb';
+    div.dataset.page = i;
+    // Keep the slot's proportions before its picture arrives, so the panel
+    // does not jump while thumbnails fill in.
+    div.style.aspectRatio = p.vis.w + ' / ' + p.vis.h;
     div.innerHTML = '<div class="tacts">' +
       '<button data-act="rotl" title="' + t('thumb.rotL') + '">↺</button>' +
       '<button data-act="rotr" title="' + t('thumb.rotR') + '">↻</button>' +
@@ -789,23 +905,6 @@
       if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     return div;
-  }
-
-  /* The thumbnail is a downscaled copy of the page canvas we just painted:
-     one pdf.js render per page instead of two. */
-  function fillThumb(div, source, page) {
-    const width = 140;
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = Math.max(1, Math.round(width * source.height / source.width));
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-    const old = div.querySelector('canvas');
-    if (old) old.remove();
-    div.insertBefore(canvas, div.firstChild);
-    void page;
   }
 
   function pageAction(act, i) {
