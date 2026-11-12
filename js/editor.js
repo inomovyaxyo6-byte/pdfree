@@ -898,13 +898,87 @@
       '<button data-act="dup" title="' + t('thumb.dup') + '">⧉</button>' +
       '<button data-act="del" title="' + t('thumb.del') + '">✕</button>' +
       '</div><div class="tnum">' + (i + 1) + '</div>';
+    div.onpointerdown = ev => startThumbDrag(ev, div, i);
     div.onclick = ev => {
       const act = ev.target.dataset && ev.target.dataset.act;
       if (act) { ev.stopPropagation(); pageAction(act, i); return; }
+      // The click that ends a drag must not also jump the view.
+      if (thumbDragged) { thumbDragged = false; return; }
       const wrap = els.stack.children[i];
       if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     return div;
+  }
+
+  /* Dragging a thumbnail is the only way to change page order — the buttons
+     can rotate, copy and delete, but not move. */
+  let drag = null;
+  let thumbDragged = false;
+
+  function startThumbDrag(ev, div, i) {
+    if (ev.button !== 0 || (ev.target.closest && ev.target.closest('.tacts'))) return;
+    // Clear it here, not after the drag: a drag that ends over another
+    // thumbnail leaves no click behind, and a stale flag eats the next one.
+    thumbDragged = false;
+    drag = { from: i, y0: ev.clientY, to: i, moved: false, div };
+    capture(div, ev);
+    div.addEventListener('pointermove', onThumbMove);
+    div.addEventListener('pointerup', endThumbDrag);
+    div.addEventListener('pointercancel', endThumbDrag);
+  }
+
+  function onThumbMove(ev) {
+    if (!drag) return;
+    if (!drag.moved) {
+      if (Math.abs(ev.clientY - drag.y0) < 5) return;   // a click, not a drag
+      drag.moved = true;
+      drag.div.classList.add('dragging');
+    }
+    // Let the panel follow the pointer, otherwise page 50 can never reach the top.
+    const box = els.panel.getBoundingClientRect();
+    if (ev.clientY < box.top + 50) els.panel.scrollTop -= 14;
+    else if (ev.clientY > box.bottom - 50) els.panel.scrollTop += 14;
+
+    drag.to = dropIndexAt(ev.clientY);
+    markDropSlot(drag.to);
+  }
+
+  function dropIndexAt(y) {
+    const thumbs = els.panel.children;
+    for (let i = 0; i < thumbs.length; i++) {
+      const r = thumbs[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) return i;
+    }
+    return thumbs.length;
+  }
+
+  function markDropSlot(to) {
+    const thumbs = els.panel.children;
+    [...thumbs].forEach(el => el.classList.remove('drop-before', 'drop-after'));
+    if (!thumbs.length) return;
+    if (to < thumbs.length) thumbs[to].classList.add('drop-before');
+    else thumbs[thumbs.length - 1].classList.add('drop-after');
+  }
+
+  function endThumbDrag() {
+    if (!drag) return;
+    const { from, to, moved, div } = drag;
+    div.removeEventListener('pointermove', onThumbMove);
+    div.removeEventListener('pointerup', endThumbDrag);
+    div.removeEventListener('pointercancel', endThumbDrag);
+    div.classList.remove('dragging');
+    [...els.panel.children].forEach(el => el.classList.remove('drop-before', 'drop-after'));
+    drag = null;
+    if (!moved) return;
+    thumbDragged = true;
+    // Removing the page first shifts every later slot down by one.
+    const at = to > from ? to - 1 : to;
+    if (at === from) return;
+    pushHistory();
+    const [page] = E.pages.splice(from, 1);
+    E.pages.splice(at, 0, page);
+    E.dirty = true;
+    renderAll();
   }
 
   function pageAction(act, i) {

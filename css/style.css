@@ -148,7 +148,16 @@ a{color:inherit;text-decoration:none}
   width:168px; flex:none; overflow-y:auto; background:var(--surface);
   border-right:1px solid var(--border); padding:12px 10px; display:flex; flex-direction:column; gap:10px;
 }
-.thumb{position:relative; border:2px solid transparent; border-radius:8px; overflow:hidden; cursor:pointer; background:var(--surface-2)}
+.thumb{
+  position:relative; border:2px solid transparent; border-radius:8px; overflow:hidden;
+  cursor:grab; background:var(--surface-2);
+  /* the panel is a flex column: without this, sixty pages squeeze into slivers */
+  flex:0 0 auto;
+}
+.thumb.dragging{opacity:.45; cursor:grabbing}
+/* where the page will land */
+.thumb.drop-before{box-shadow:0 -3px 0 var(--accent)}
+.thumb.drop-after{box-shadow:0 3px 0 var(--accent)}
 .thumb.active{border-color:var(--accent)}
 .thumb canvas{display:block; width:100%; height:auto}
 .thumb .tnum{
